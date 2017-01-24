@@ -1,0 +1,60 @@
+html,body {
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+    background-color: black;
+}
+
+/** {
+    cursor: url(../cursor/arrow.png), auto;
+}*/
+
+.layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+#info {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    margin: 0px;
+    padding: 2px;
+    min-width: 100px;
+    text-align: right;
+    font-family: monospace;
+}
+
+.asset {
+    display: none;
+}
+
+.scaling {
+    display: block;
+    width: 100vw;
+    max-width: 177.78vh;
+    margin-left: auto;
+    margin-right: auto;
+    height: 100vh;
+    max-height: 56.25vw;
+}
+
+body {
+    overflow: hidden;
+}
+
+input {
+    margin: 1%;
+}
+
+.overlay {
+    pointer-events: none;
+}
+
+.interface {
+    -webkit-user-select: none;
+}

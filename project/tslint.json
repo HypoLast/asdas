@@ -1,0 +1,26 @@
+{
+  "extends": "tslint:latest",
+  "rules": {
+    "array-type": [
+        true,
+        "array"
+    ],
+    "no-console": [
+        true
+    ],
+    "curly": false,
+    "one-line": [
+        true,
+        "check-catch",
+        "check-finally",
+        "check-whitespace"
+      ],
+    "interface-name": [
+        false
+    ]
+  },
+  "jsRules": {
+  },
+  "rulesDirectory": [
+  ]
+}

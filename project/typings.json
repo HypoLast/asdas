@@ -1,0 +1,10 @@
+{
+  "globalDependencies": {
+    "gsap/core": "registry:dt/gsap/core#0.0.0+20160316155526",
+    "gsap/ease": "registry:dt/gsap/ease#0.0.0+20160316155526",
+    "gsap/tweenlite": "registry:dt/gsap/tweenlite#0.0.0+20160316155526",
+    "node": "registry:dt/node#6.0.0+20160621231320",
+    "nw.js": "registry:dt/nw.js#0.13.0+20160619023536",
+    "pixi.js": "registry:dt/pixi.js#3.0.9+20160705114540"
+  }
+}

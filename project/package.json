@@ -1,0 +1,17 @@
+{
+  "name": "ts2d",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build.js",
+  "dependencies": {
+    "node-webkit": "^0.0.0",
+    "nw": "^0.12.3",
+    "nw-builder": "^2.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

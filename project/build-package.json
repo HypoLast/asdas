@@ -1,0 +1,19 @@
+{
+  "name": "ts2d",
+  "version": "1.0.0",
+  "description": "",
+  "main": "manifest.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mike",
+  "window": {
+    "toolbar": false,
+    "width": 1920,
+    "height": 1080,
+    "fullscreen": true,
+    "min_width": 1440,
+    "min_height": 810
+  },
+  "license": "ISC"
+}

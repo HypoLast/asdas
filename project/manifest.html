@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<head>
+    <title>Window Title</title>
+    <script type="text/javascript" src="res/js/pixi.min.js"></script>
+    <script type="text/javascript">var gs = window.GreenSockGlobals = {};</script>
+    <script type="text/javascript" src="res/js/TweenMax.min.js"></script>
+    <script type="text/javascript">
+        global.TweenLite = gs.TweenLite;
+        // global.Ease = gs.Ease;
+        global.Linear = gs.Linear;
+    </script>
+
+    <script type="text/javascript" src="main.js"></script>
+    <link rel="stylesheet" href="res/css/style.css">
+</head>
+<body onload="main()">
+    <div id="canvas-screen" class="layer"></div>
+    <p id="info" class="overlay">.</p>
+</body>
