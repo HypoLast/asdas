@@ -32,6 +32,12 @@ export class Game {
         this.drawingLayer.addChild(this.spriteLayer);
 
         this.overworld = new Overworld(this.spriteLayer, this.backgroundLayer);
+        let mapId = 1;
+        this.overworld.loadMap(mapId);
+        setInterval(() => {
+            mapId = mapId % 20 + 1;
+            this.overworld.loadMap(mapId);
+        }, 3000);
     }
 
     public tick() {
