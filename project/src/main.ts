@@ -7,6 +7,7 @@ import * as Keyboard from "./providers/Keyboard";
 import * as Mouse from "./providers/Mouse";
 import * as PointerLock from "./providers/PointerLock";
 import * as Stage from "./providers/Stage";
+import * as Tiles from "./providers/Tiles";
 
 import { Game } from "./game/Game";
 
@@ -35,6 +36,7 @@ function main() {
     Keyboard.Init(document.body);
     PointerLock.Init({ width: dimensions.WIDTH, height: dimensions.HEIGHT });
     Stage.Init(win, renderer, stage);
+    Tiles.Init();
 
     // global hotkeys
     // escape closes the window

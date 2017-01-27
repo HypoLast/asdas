@@ -36,7 +36,8 @@ export function getTileTexture(batch: keyof typeof tiles, x: number = 0, y: numb
     return texture;
 }
 
-const tiles = {
+export const tiles = {
     grass: pool([5, 0], [5, 1]),
+    sand: pool([8, 0], [8, 1]),
     water: pool([0, 0], [1, 0]),
 };

@@ -3,6 +3,11 @@ import * as Keyboard from "../providers/Keyboard";
 import { MersenneTwister } from "../random/MersenneTwister";
 import * as perlin from "../random/Perlin";
 import { GameComponent } from "./GameComponent";
+import { Block, MapGenerator } from "./MapGenerator";
+
+function blockIdx(x: number, y: number) {
+    return (x + 1) + (y + 1) * 3;
+}
 
 interface Controls {
     up: boolean;
@@ -25,10 +30,14 @@ export class Overworld extends GameComponent {
     };
     public canMove: boolean = true;
     public moveStart = -1;
-    public playerCoord: { x: number, y: number };
+    public playerCoord: { x: number, y: number } = { x: 0, y: 0 };
     public mapSeed = -1;
+    public tileLayer: PIXI.Container = new PIXI.Container();
 
     private timer = 0;
+
+    private blocks: Block[];
+    private generator: MapGenerator;
 
     private sand: [number, number, number] = [0xFF, 0xEE, 0xCC];
     private water: [number, number, number] = [0x00, 0x44, 0xFF];
@@ -39,6 +48,7 @@ export class Overworld extends GameComponent {
 
     constructor(spriteLayer: PIXI.Container, backgroundLayer: PIXI.Container) {
         super(spriteLayer, backgroundLayer);
+        backgroundLayer.addChild(this.tileLayer);
         Keyboard.provider().do((o) => {
             switch (o.keyCode) {
                 case KeyCodes.ARROW_UP: this.controls.up = o.pressed; break;
@@ -53,33 +63,23 @@ export class Overworld extends GameComponent {
     }
 
     public loadMap(mapSeed: number) {
-        let mt = new MersenneTwister(mapSeed);
-        perlin.setSeed(mt.genrand_int32());
-        let canvas = window.document.createElement("canvas");
-        canvas.width = 1000;
-        canvas.height = 1000;
-        let ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        for (let i = 0; i < canvas.width / 5; i ++) {
-            for (let j = 0; j < canvas.height / 5; j ++) {
-                let noise = perlin.multiChannelPerlin2d(i / 30, j / 30, 3, 2, [1, 1 / 6]);
-                let pvals = noise.map((v) => (v + 1) / 2);
-                let ground = pvals[0];
-                let groundColor: [number, number, number];
-                if (ground < 0.3) groundColor = this.gradient([0, 0, 0xFF], this.water, ground / 0.3);
-                else if (ground < 0.4) groundColor = this.gradient(this.water, this.sand, (ground - 0.3) / 0.1);
-                else if (ground < 0.6) groundColor = this.gradient(this.sand, this.grass, (ground - 0.4) / 0.2);
-                else groundColor = this.gradient(this.grass, [0, 0xAA, 0], (ground - 0.6) / 0.4);
-                let tempColor = this.gradient(this.cold, this.hot, pvals[1]);
-                // pvals = pvals.map((v) => (v.length === 1 ? "0" : "") + v);
-                ctx.fillStyle = "rgb(" + Math.round(groundColor[0] * 0.5 + tempColor[0] * 0.5) + "," +
-                                         Math.round(groundColor[1] * 0.5 + tempColor[1] * 0.5) + "," +
-                                         Math.round(groundColor[2] * 0.5 + tempColor[2] * 0.5) + ")";
-                ctx.fillRect(i * 5, j * 5, 5, 5);
+        this.mapSeed = mapSeed;
+        this.generator = new MapGenerator(mapSeed);
+        this.blocks = [];
+        let blockX = this.playerCoord.x;
+        let blockY = this.playerCoord.y;
+        let blockOffX = this.playerCoord.x % 64;
+        let blockOffY = this.playerCoord.y % 64;
+
+        for (let i = -1; i <= 1; i ++) {
+            for (let j = -1; j <= 1; j ++) {
+                let block = this.blocks[blockIdx(i, j)] = this.generator.getBlock(i + blockX, j + blockY);
+                let blockGraphic = block.getRenderLayer();
+                blockGraphic.x = 64 * 20 * i;
+                blockGraphic.y = 64 * 20 * j;
+                this.tileLayer.addChild(blockGraphic);
             }
         }
-        let img = new PIXI.Sprite(PIXI.Texture.fromCanvas(canvas));
-        this.spriteLayer.addChild(img);
     }
 
     public tick() {
