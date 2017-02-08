@@ -5,6 +5,6 @@
     "command": "test.bat",
     "isShellCommand": true,
     "args": [],
-    "showOutput": "silent",
+    "showOutput": "never",
     "problemMatcher": "$tsc"
 }

@@ -17,6 +17,9 @@
       ],
     "interface-name": [
         false
+    ],
+    "max-line-length": [
+        false
     ]
   },
   "jsRules": {

@@ -26,21 +26,22 @@ export class Game {
         this.root.addChild(this.drawingLayer);
         this.root.addChild(this.UILayer);
 
-        this.backgroundLayer = new PIXI.Container();
-        this.spriteLayer = new PIXI.Container();
-        this.drawingLayer.addChild(this.backgroundLayer);
-        this.drawingLayer.addChild(this.spriteLayer);
+        // this.backgroundLayer = new PIXI.Container();
+        // this.spriteLayer = new PIXI.Container();
+        // this.drawingLayer.addChild(this.backgroundLayer);
+        // this.drawingLayer.addChild(this.spriteLayer);
 
-        this.overworld = new Overworld(this.spriteLayer, this.backgroundLayer);
+        this.overworld = new Overworld();
+        this.drawingLayer.addChild(this.overworld.renderLayer);
         let mapId = 1;
         this.overworld.loadMap(mapId);
-        setInterval(() => {
-            mapId = mapId % 20 + 1;
-            this.overworld.loadMap(mapId);
-        }, 3000);
+        // setInterval(() => {
+        //     mapId ++;
+        //     this.overworld.loadMap(mapId);
+        // }, 3000);
     }
 
-    public tick() {
+    public tick(dt: number) {
         switch (this.mode) {
             case "overworld": this.overworld.tick(); break;
             default: console.log("no method for ticking " + this.mode);

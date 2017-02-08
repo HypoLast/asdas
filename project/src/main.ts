@@ -20,8 +20,8 @@ function main() {
     let win = <Window> nwgui.Window.get();
 
     // win.enterFullscreen();
-    let renderer: PIXI.SystemRenderer = new PIXI.WebGLRenderer(dimensions.WIDTH,
-                                                               dimensions.HEIGHT,
+    let renderer: PIXI.SystemRenderer = new PIXI.WebGLRenderer(dimensions.SCREEN_WIDTH,
+                                                               dimensions.SCREEN_HEIGHT,
                                                                { backgroundColor : 0x1099bb });
     renderer.view.classList.add("scaling");
     renderer.view.id = "stage";
@@ -34,7 +34,7 @@ function main() {
     Mouse.Init(window, renderer.view);
     GameClock.Init(30);
     Keyboard.Init(document.body);
-    PointerLock.Init({ width: dimensions.WIDTH, height: dimensions.HEIGHT });
+    PointerLock.Init({ width: dimensions.SCREEN_WIDTH, height: dimensions.SCREEN_HEIGHT });
     Stage.Init(win, renderer, stage);
     Tiles.Init();
 
@@ -76,6 +76,7 @@ function main() {
     let total = 0;
     GameClock.provider().do((f) => {
         if (!f) return;
+        game.tick(f.dt);
         tickTimes.push(f.dt);
         total += f.dt;
         if (tickTimes.length > 30) total -= tickTimes.shift();

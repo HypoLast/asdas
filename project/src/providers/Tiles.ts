@@ -3,7 +3,8 @@ let padding = 1;
 let roguelike: PIXI.Texture;
 
 export function Init() {
-    roguelike = PIXI.Texture.fromImage("/res/img/roguelikeSheet_transparent.png");
+    roguelike = PIXI.Texture.fromImage("res/img/tiles/roguelikeSheet_transparent.png");
+    roguelike.scaleMode = PIXI.SCALE_MODES.NEAREST;
 }
 
 export function getTile(tilePool: TilePool) {
