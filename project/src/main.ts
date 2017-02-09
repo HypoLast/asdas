@@ -6,6 +6,7 @@ import * as GameClock from "./providers/GameClock";
 import * as Keyboard from "./providers/Keyboard";
 import * as Mouse from "./providers/Mouse";
 import * as PointerLock from "./providers/PointerLock";
+import * as Sprites from "./providers/Sprites";
 import * as Stage from "./providers/Stage";
 import * as Tiles from "./providers/Tiles";
 
@@ -37,6 +38,7 @@ function main() {
     PointerLock.Init({ width: dimensions.SCREEN_WIDTH, height: dimensions.SCREEN_HEIGHT });
     Stage.Init(win, renderer, stage);
     Tiles.Init();
+    Sprites.Init();
 
     // global hotkeys
     // escape closes the window

@@ -2,6 +2,7 @@ import * as dimensions from "../const/dimensions";
 import * as KeyCodes from "../const/keycodes";
 import * as timings from "../const/timings";
 import * as Keyboard from "../providers/Keyboard";
+import * as sprites from "../providers/Sprites";
 import { MersenneTwister } from "../random/MersenneTwister";
 import { lerp } from "../random/Perlin";
 import * as perlin from "../random/Perlin";
@@ -51,7 +52,7 @@ export class Overworld implements GameComponent {
     private blocks: Block[] = [];
     private generator: MapGenerator;
 
-    private playerSprite: PIXI.Graphics;
+    private playerSprite: sprites.AnimatedSprite;
 
     constructor() {
         this.renderLayer.addChild(this.backgroundLayer);
@@ -70,10 +71,10 @@ export class Overworld implements GameComponent {
             }
         });
 
-        this.playerSprite = new PIXI.Graphics();
-        this.playerSprite.beginFill(0xFF0000);
-        this.playerSprite.drawCircle(dimensions.TILE_WIDTH / 2, dimensions.TILE_HEIGHT / 2, dimensions.TILE_WIDTH / 2);
-        this.playerSprite.endFill();
+        this.playerSprite = sprites.getCharacterSprite("guy");
+        this.playerSprite.width = 50;
+        this.playerSprite.height = 50;
+        sprites.juggle(this.playerSprite);
 
         this.spriteLayer.addChild(this.playerSprite);
     }
@@ -144,18 +145,25 @@ export class Overworld implements GameComponent {
                 let newCoord = { x: this.playerCoord.x, y: this.playerCoord.y };
                 if (this.controls.left) {
                     newCoord.x --;
+                    this.playerSprite.direction = sprites.Direction.LEFT;
                 } else if (this.controls.right) {
                     newCoord.x ++;
+                    this.playerSprite.direction = sprites.Direction.RIGHT;
                 } else if (this.controls.up) {
                     newCoord.y --;
+                    this.playerSprite.direction = sprites.Direction.UP;
                 } else if (this.controls.down) {
                     newCoord.y ++;
+                    this.playerSprite.direction = sprites.Direction.DOWN;
                 }
                 if (this.tileIsWalkable(newCoord)) {
                     this.movingCoord = newCoord;
                     this.moveStart = this.timer;
                     this.canMove = false;
                 }
+                this.playerSprite.animation = "walk";
+            } else {
+                this.playerSprite.animation = "stand";
             }
         }
     }
