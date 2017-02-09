@@ -80,6 +80,7 @@ export class Overworld implements GameComponent {
 
     public loadMap(mapSeed: number) {
         this.mapSeed = mapSeed;
+        if (this.generator) this.generator.dispose();
         this.generator = new MapGenerator(mapSeed);
         this.loadChunk();
     }
@@ -126,9 +127,12 @@ export class Overworld implements GameComponent {
             if (this.moveStart >= 0 && this.timer >= this.moveStart + timings.STEP) {
                 this.canMove = true;
                 if (this.movingCoord) {
-                    if (Math.floor(this.movingCoord.x / dimensions.BLOCK_WIDTH) !== Math.floor(this.playerCoord.x / dimensions.BLOCK_WIDTH) ||
-                        Math.floor(this.movingCoord.y / dimensions.BLOCK_HEIGHT) !== Math.floor(this.playerCoord.y / dimensions.BLOCK_HEIGHT)) {
+                    let X = Math.floor(this.movingCoord.x / dimensions.BLOCK_WIDTH);
+                    let Y = Math.floor(this.movingCoord.y / dimensions.BLOCK_HEIGHT);
+                    if (X !== Math.floor(this.playerCoord.x / dimensions.BLOCK_WIDTH) ||
+                        Y !== Math.floor(this.playerCoord.y / dimensions.BLOCK_HEIGHT)) {
                         this.loadChunk();
+                        this.generator.setCenter(X, Y);
                     }
                     this.playerCoord = this.movingCoord;
                     this.movingCoord = undefined;

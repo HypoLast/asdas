@@ -26,19 +26,10 @@ export class Game {
         this.root.addChild(this.drawingLayer);
         this.root.addChild(this.UILayer);
 
-        // this.backgroundLayer = new PIXI.Container();
-        // this.spriteLayer = new PIXI.Container();
-        // this.drawingLayer.addChild(this.backgroundLayer);
-        // this.drawingLayer.addChild(this.spriteLayer);
-
         this.overworld = new Overworld();
         this.drawingLayer.addChild(this.overworld.renderLayer);
         let mapId = 1;
         this.overworld.loadMap(mapId);
-        // setInterval(() => {
-        //     mapId ++;
-        //     this.overworld.loadMap(mapId);
-        // }, 3000);
     }
 
     public tick(dt: number) {

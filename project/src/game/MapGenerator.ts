@@ -24,22 +24,44 @@ export class MapGenerator {
     private spiralCenter = { x: 0, y: 0 };
     private rootSeed: number;
 
+    private passiveLoadTimer: NodeJS.Timer;
+    private passiveUnloadTimer: NodeJS.Timer;
+
     constructor(public seed: number) {
         let mt = new MersenneTwister(this.seed);
         this.rootSeed = mt.genrand_int32();
+
+        this.passiveLoadTimer = setInterval(() => this.passiveLoadStep(), 5);
+        this.passiveUnloadTimer = setInterval(() => this.unloadOutOfRangeBlocks(), 5000);
+    }
+
+    public dispose() {
+        clearInterval(this.passiveLoadTimer);
+        clearInterval(this.passiveUnloadTimer);
     }
 
     public getBlock(x: number, y: number) {
         let blockName = x + "," + y;
-        if (this.loadedBlocks[blockName] !== undefined) return this.loadedBlocks[blockName];
+        let block = this.loadedBlocks[blockName] || new Block(x, y);
         perlin.setSeed(this.rootSeed);
-        let block = new Block(x, y);
-        for (let i = 0; i < dimensions.BLOCK_WIDTH; i ++) {
-            block.tiles[i] = this.getBlockColumn(x, y, i);
+        for (block.loaded; block.loaded < dimensions.BLOCK_WIDTH; block.loaded ++) {
+            block.tiles[block.loaded] = this.getBlockColumn(x, y, block.loaded);
         }
-        block.loaded = dimensions.BLOCK_HEIGHT;
         this.loadedBlocks[blockName] = block;
         return block;
+    }
+
+    public unloadOutOfRangeBlocks() {
+        for (let blockName in this.loadedBlocks) {
+            if (!this.loadedBlocks.hasOwnProperty(blockName)) continue;
+            let [x, y] = blockName.split(",").map((e) => parseInt(e, 10));
+            let dx = x - this.spiralCenter.x;
+            let dy = y - this.spiralCenter.y;
+            if (Math.sqrt(dx * dx + dy * dy) > 6) {
+                delete this.loadedBlocks[blockName];
+                console.log("unloaded " + blockName);
+            }
+        }
     }
 
     public getBlockColumn(x: number, y: number, col: number) {
@@ -79,10 +101,16 @@ export class MapGenerator {
              X = this.spiralCenter.x + offX;
              Y = this.spiralCenter.y + offY;
              blockName = X + "," + Y;
-        } while (this.spiralStep < 50 && this.loadedBlocks[blockName] !== undefined && this.loadedBlocks[blockName].loaded === dimensions.BLOCK_HEIGHT);
+        } while (this.spiralStep < 50 && this.loadedBlocks[blockName] !== undefined && this.loadedBlocks[blockName].loaded >= dimensions.BLOCK_WIDTH);
+        if (this.spiralStep >= 50) return;
         if (this.loadedBlocks[blockName] === undefined) this.loadedBlocks[blockName] = new Block(X, Y);
         let block = this.loadedBlocks[blockName];
-
+        block.tiles[block.loaded] = this.getBlockColumn(X, Y, block.loaded);
+        block.loaded ++;
+        if (block.loaded >= dimensions.BLOCK_WIDTH) {
+            let dummy = block.renderLayer; // for caching so that we aren't drawing a bunch of renderlayers at once
+            console.log("loaded " + blockName);
+        }
     }
 
 }
