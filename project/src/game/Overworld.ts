@@ -42,6 +42,7 @@ export class Overworld implements GameComponent {
     public movingCoord?: { x: number, y: number };
     public mapSeed = -1;
     public tileLayer: PIXI.Container = new PIXI.Container();
+    public overheadLayer: PIXI.Container = new PIXI.Container();
 
     public renderLayer: PIXI.Container = new PIXI.Container();
     private backgroundLayer: PIXI.Container = new PIXI.Container();
@@ -57,6 +58,7 @@ export class Overworld implements GameComponent {
     constructor() {
         this.renderLayer.addChild(this.backgroundLayer);
         this.renderLayer.addChild(this.spriteLayer);
+        this.renderLayer.addChild(this.overheadLayer);
 
         this.backgroundLayer.addChild(this.tileLayer);
         Keyboard.provider().do((o) => {
@@ -72,8 +74,8 @@ export class Overworld implements GameComponent {
         });
 
         this.playerSprite = sprites.getCharacterSprite("guy");
-        this.playerSprite.width = 50;
-        this.playerSprite.height = 50;
+        this.playerSprite.width = dimensions.TILE_WIDTH;
+        this.playerSprite.height = dimensions.TILE_HEIGHT;
         sprites.juggle(this.playerSprite);
 
         this.spriteLayer.addChild(this.playerSprite);
@@ -87,7 +89,11 @@ export class Overworld implements GameComponent {
     }
 
     public loadChunk() {
-        while (this.blocks.length > 0) this.tileLayer.removeChild((<Block> this.blocks.pop()).renderLayer);
+        while (this.blocks.length > 0) {
+            let block = <Block> this.blocks.pop();
+            this.tileLayer.removeChild(block.renderLayers[0]);
+            this.overheadLayer.removeChild(block.renderLayers[1]);
+        }
         let coord = this.movingCoord || this.playerCoord;
         let blockX = Math.floor(coord.x / dimensions.BLOCK_WIDTH);
         let blockY = Math.floor(coord.y / dimensions.BLOCK_HEIGHT);
@@ -95,10 +101,14 @@ export class Overworld implements GameComponent {
         for (let i = -1; i <= 1; i ++) {
             for (let j = -1; j <= 1; j ++) {
                 let block = this.blocks[blockIdx(i, j)] = this.generator.getBlock(i + blockX, j + blockY);
-                let blockGraphic = block.renderLayer;
+                let [blockGraphic, blockOverhead] = block.renderLayers;
                 blockGraphic.x = dimensions.BLOCK_WIDTH * block.x * dimensions.TILE_WIDTH;
                 blockGraphic.y = dimensions.BLOCK_HEIGHT * block.y * dimensions.TILE_HEIGHT;
                 this.tileLayer.addChild(blockGraphic);
+
+                blockOverhead.x = dimensions.BLOCK_WIDTH * block.x * dimensions.TILE_WIDTH;
+                blockOverhead.y = dimensions.BLOCK_HEIGHT * block.y * dimensions.TILE_HEIGHT;
+                this.overheadLayer.addChild(blockOverhead);
             }
         }
     }
@@ -118,6 +128,7 @@ export class Overworld implements GameComponent {
         let blockY = Math.floor(coord.y / dimensions.BLOCK_HEIGHT);
         let block = this.generator.getBlock(blockX, blockY);
         let cell = block.tiles[pMod(coord.x, dimensions.BLOCK_WIDTH)][pMod(coord.y, dimensions.BLOCK_HEIGHT)];
+        console.log(cell.temperature);
         return cell.passable;
     }
 
@@ -181,11 +192,11 @@ export class Overworld implements GameComponent {
             visualPlayerPosition = { x: this.playerCoord.x * dimensions.TILE_WIDTH, y: this.playerCoord.y * dimensions.TILE_HEIGHT };
         }
 
-        this.backgroundLayer.x = this.spriteLayer.x = -visualPlayerPosition.x + dimensions.SCREEN_WIDTH / 2;
-        this.backgroundLayer.y = this.spriteLayer.y = -visualPlayerPosition.y + dimensions.SCREEN_HEIGHT / 2;
+        this.backgroundLayer.x = this.spriteLayer.x = this.overheadLayer.x = Math.round(-visualPlayerPosition.x + dimensions.SCREEN_WIDTH / 2);
+        this.backgroundLayer.y = this.spriteLayer.y = this.overheadLayer.y = Math.round(-visualPlayerPosition.y + dimensions.SCREEN_HEIGHT / 2);
 
-        this.playerSprite.x = visualPlayerPosition.x;
-        this.playerSprite.y = visualPlayerPosition.y;
+        this.playerSprite.x = Math.round(visualPlayerPosition.x);
+        this.playerSprite.y = Math.round(visualPlayerPosition.y);
     }
 
 }

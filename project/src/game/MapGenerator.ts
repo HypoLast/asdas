@@ -1,7 +1,9 @@
 import * as dimensions from "../const/dimensions";
-import { getTileTexture, tiles } from "../providers/Tiles";
+import { getTileTexture, prand, tiles } from "../providers/Tiles";
 import { MersenneTwister } from "../random/MersenneTwister";
 import * as perlin from "../random/Perlin";
+
+type FeatureType = "none" | "hotTree" | "coldTree" | "tree" | "snowTree";
 
 function spiral(n: number): [number, number] {
     let k = Math.ceil((Math.sqrt(n) - 1) / 2);
@@ -70,15 +72,7 @@ export class MapGenerator {
         for (let j = 0; j < dimensions.BLOCK_HEIGHT; j ++) {
             let X = x * dimensions.BLOCK_WIDTH + col;
             let Y = y * dimensions.BLOCK_HEIGHT + j;
-            let cell = new Cell(X, Y);
-            let [elevation, temperature] = perlin.multiChannelPerlin2d(X / 30, Y / 30, 3, 2, [1, 1 / 6]);
-            if (elevation < -0.4) cell.type = "water";
-            else if (elevation < -0.1) cell.type = "sand";
-            else cell.type = "grass";
-            cell.elevation = elevation;
-            cell.temperature = temperature;
-            cell.passable = cell.type !== "water";
-            tiles[j] = cell;
+            tiles[j] = new Cell(X, Y, perlin.multiChannelPerlin2d(X / 30, Y / 30, 3, 2, [1, 1 / 6]));
         }
         return tiles;
     }
@@ -108,7 +102,8 @@ export class MapGenerator {
         block.tiles[block.loaded] = this.getBlockColumn(X, Y, block.loaded);
         block.loaded ++;
         if (block.loaded >= dimensions.BLOCK_WIDTH) {
-            let dummy = block.renderLayer; // for caching so that we aren't drawing a bunch of renderlayers at once
+            // renderlayers are going to be non-trivial to get, hold off on this
+            // let dummy = block.renderLayer; // for caching so that we aren't drawing a bunch of renderlayers at once
             console.log("loaded " + blockName);
         }
     }
@@ -120,35 +115,114 @@ export class Block {
     public tiles: Cell[][] = [];
     public loaded = 0;
 
-    private layer: PIXI.Container;
+    private layers: [PIXI.Container, PIXI.Container];
 
     constructor(public x: number, public y: number) { }
 
-    public get renderLayer(): PIXI.Container {
-        if (this.layer !== undefined) return this.layer;
-        this.layer = new PIXI.Container();
+    public get renderLayers(): [PIXI.Container, PIXI.Container] {
+        if (this.layers !== undefined) return this.layers;
+        this.layers = [new PIXI.Container(), new PIXI.Container()];
         for (let i = 0; i < dimensions.BLOCK_WIDTH; i ++) {
             for (let j = 0; j < dimensions.BLOCK_HEIGHT; j ++) {
-                let tileSprite = new PIXI.Sprite(getTileTexture(this.tiles[i][j].type,
-                                                                i + this.x * dimensions.BLOCK_WIDTH,
-                                                                j + this.y * dimensions.BLOCK_HEIGHT));
-                tileSprite.width = dimensions.TILE_WIDTH + 2;
-                tileSprite.height = dimensions.TILE_HEIGHT + 2;
+                let tileSprite = this.tiles[i][j].getTileSprite();
                 tileSprite.x = i * dimensions.TILE_WIDTH;
-                tileSprite.y = j * dimensions.TILE_HEIGHT;
-                this.layer.addChild(tileSprite);
+                tileSprite.y = j * dimensions.TILE_WIDTH;
+                this.layers[0].addChild(tileSprite);
+
+                let tileOverhead = this.tiles[i][j].getTileOverhead();
+                if (tileOverhead) {
+                    tileOverhead.x = i * dimensions.TILE_WIDTH;
+                    tileOverhead.y = j * dimensions.TILE_HEIGHT;
+                    this.layers[1].addChild(tileOverhead);
+                }
             }
         }
-        return this.layer;
+        return this.layers;
     }
 }
 
 // tslint:disable-next-line:max-classes-per-file
 export class Cell {
-    public type: keyof typeof tiles;
-    public elevation: number;
-    public temperature: number;
-    public passable: boolean;
+    public type: keyof typeof tiles = "water";
+    public elevation: number = 0;
+    public temperature: number = 0;
+    public passable: boolean = false;
+    public feature: FeatureType = "none";
 
-    constructor(public x: number, public y: number) { }
+    constructor(public x: number, public y: number, public params: number[]) {
+        let [elevation, temperature] = this.params;
+        this.elevation = elevation;
+        this.temperature = temperature;
+        this.eval();
+    }
+
+    public eval() {
+        if (this.elevation < -0.4) {
+            this.type = "water";
+        } else if (this.elevation < -0.1) {
+            this.type = "sand";
+        } else {
+            this.type = "grass";
+        }
+
+        if (this.type === "water") {
+            this.passable = false;
+        } else {
+            this.passable = true;
+        }
+
+        let mt = new MersenneTwister(prand(this.x, this.y));
+
+        if (this.type === "grass" && mt.random() * 0.05 + 0.7 < this.temperature) {
+            this.type = "sand";
+        }
+
+        if (mt.random() * 0.05 - 0.6 > this.temperature) {
+            if (this.type === "grass" || this.type === "sand") {
+                this.type = "snow";
+            }
+            if (this.type === "water") {
+                this.type = "ice";
+                this.passable = true;
+            }
+        }
+
+        if (this.elevation > 0.1 &&
+                mt.random() * 4 < -Math.abs((this.temperature + 0.9) / 1.9 * 2 - 1) + 1) {
+            this.passable = false;
+            if (this.type === "sand") {
+                this.feature = "hotTree";
+            } else if (this.type === "snow") {
+                this.feature = "snowTree";
+            } else {
+                let rnd = mt.random() + (this.temperature + 0.4) / 1.4;
+                if (rnd < 0.4) this.feature = "coldTree";
+                else if (rnd < 1.4) this.feature = "tree";
+                else this.feature = "hotTree";
+            }
+        }
+    }
+
+    public getTileSprite() {
+        let sprite = new PIXI.Sprite(getTileTexture(this.type, this.x, this.y));
+        sprite.width = dimensions.TILE_WIDTH;
+        sprite.height = dimensions.TILE_HEIGHT;
+        if (this.feature === "tree" || this.feature === "hotTree" || this.feature === "coldTree" || this.feature === "snowTree") {
+            sprite.addChild(new PIXI.Sprite(getTileTexture(<keyof typeof tiles> (this.feature + "Base"), this.x, this.y)));
+        }
+        return sprite;
+    }
+
+    public getTileOverhead(): PIXI.Sprite | undefined {
+        if (this.feature === "none") return;
+        let sprite = new PIXI.Sprite();
+        if (this.feature === "tree" || this.feature === "hotTree" || this.feature === "coldTree" || this.feature === "snowTree") {
+            let treetop = new PIXI.Sprite(getTileTexture(<keyof typeof tiles> (this.feature + "Top"), this.x, this.y));
+            treetop.width = dimensions.TILE_WIDTH;
+            treetop.height = dimensions.TILE_HEIGHT;
+            treetop.y = -dimensions.TILE_HEIGHT;
+            sprite.addChild(treetop);
+        }
+        return sprite;
+    }
 }

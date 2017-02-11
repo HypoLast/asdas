@@ -99,9 +99,16 @@ export function getCharacterSprite(name: keyof typeof characters) {
     return new AnimatedSprite(frames);
 }
 
+// tslint:disable:object-literal-sort-keys
 export const characters = {
-    girl: [6, 0],
-    guy: [3, 0],
+    base:   [0, 0],
+    guy:    [3, 0],
+    girl:   [6, 0],
+    skeleton: [9, 0],
+    slime:  [0, 4],
+    bat:    [3, 4],
+    ghost:  [6, 4],
+    spider: [9, 4],
 };
 
 let juggledAnimations: AnimatedSprite[] = [];
