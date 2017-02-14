@@ -1,6 +1,7 @@
 import * as dimensions from "../const/dimensions";
 import * as KeyCodes from "../const/keycodes";
 import * as timings from "../const/timings";
+import { pMod } from "../math";
 import * as Keyboard from "../providers/Keyboard";
 import * as sprites from "../providers/Sprites";
 import { MersenneTwister } from "../random/MersenneTwister";
@@ -11,10 +12,6 @@ import { Block, MapGenerator } from "./MapGenerator";
 
 function blockIdx(x: number, y: number) {
     return (x + 1) + (y + 1) * 3;
-}
-
-function pMod(m: number, n: number) {
-    return ((m % n) + n) % n;
 }
 
 interface Controls {
@@ -128,7 +125,6 @@ export class Overworld implements GameComponent {
         let blockY = Math.floor(coord.y / dimensions.BLOCK_HEIGHT);
         let block = this.generator.getBlock(blockX, blockY);
         let cell = block.tiles[pMod(coord.x, dimensions.BLOCK_WIDTH)][pMod(coord.y, dimensions.BLOCK_HEIGHT)];
-        console.log(cell.temperature);
         return cell.passable;
     }
 
@@ -148,6 +144,7 @@ export class Overworld implements GameComponent {
                     }
                     this.playerCoord = this.movingCoord;
                     this.movingCoord = undefined;
+                    // console.log(this.generator.getCell(this.playerCoord.x, this.playerCoord.y).temperature);
                 }
             }
         }

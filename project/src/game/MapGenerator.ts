@@ -1,4 +1,5 @@
 import * as dimensions from "../const/dimensions";
+import { pMod } from "../math";
 import { getTileTexture, prand, tiles } from "../providers/Tiles";
 import { MersenneTwister } from "../random/MersenneTwister";
 import * as perlin from "../random/Perlin";
@@ -34,7 +35,7 @@ export class MapGenerator {
         this.rootSeed = mt.genrand_int32();
 
         this.passiveLoadTimer = setInterval(() => this.passiveLoadStep(), 5);
-        this.passiveUnloadTimer = setInterval(() => this.unloadOutOfRangeBlocks(), 5000);
+        // this.passiveUnloadTimer = setInterval(() => this.unloadOutOfRangeBlocks(), 5000);
     }
 
     public dispose() {
@@ -50,6 +51,7 @@ export class MapGenerator {
             block.tiles[block.loaded] = this.getBlockColumn(x, y, block.loaded);
         }
         this.loadedBlocks[blockName] = block;
+        block.resolve();
         return block;
     }
 
@@ -59,11 +61,40 @@ export class MapGenerator {
             let [x, y] = blockName.split(",").map((e) => parseInt(e, 10));
             let dx = x - this.spiralCenter.x;
             let dy = y - this.spiralCenter.y;
-            if (Math.sqrt(dx * dx + dy * dy) > 6) {
+            if (Math.sqrt(dx * dx + dy * dy) > 40) {
                 delete this.loadedBlocks[blockName];
-                console.log("unloaded " + blockName);
             }
         }
+    }
+
+    public getCell(x: number, y: number) {
+        let blockX = Math.floor(x / dimensions.BLOCK_WIDTH);
+        let blockY = Math.floor(y / dimensions.BLOCK_HEIGHT);
+        let blockName = blockX + "," + blockY;
+        if (this.loadedBlocks[blockName] !== undefined) {
+            let block = this.loadedBlocks[blockName];
+            let cellX = pMod(x, dimensions.BLOCK_WIDTH);
+            let cellY = pMod(y, dimensions.BLOCK_HEIGHT);
+            if (block.loaded > cellX) {
+                return block.tiles[cellX][cellY];
+            }
+        }
+        return new Cell(x, y, this.getCellParameters(x, y));
+    }
+
+    public getCellParameters(x: number, y: number) {
+        let blockX = Math.floor(x / dimensions.BLOCK_WIDTH);
+        let blockY = Math.floor(y / dimensions.BLOCK_HEIGHT);
+        let blockName = blockX + "," + blockY;
+        if (this.loadedBlocks[blockName] !== undefined) {
+            let block = this.loadedBlocks[blockName];
+            let cellX = pMod(x, dimensions.BLOCK_WIDTH);
+            let cellY = pMod(y, dimensions.BLOCK_HEIGHT);
+            if (block.loaded > cellX) {
+                return block.tiles[cellX][cellY].params;
+            }
+        }
+        return perlin.multiChannelPerlin2d(x / 80, y / 80, 3, 3, [1, 3 / 13, 5 / 43]);
     }
 
     public getBlockColumn(x: number, y: number, col: number) {
@@ -72,7 +103,8 @@ export class MapGenerator {
         for (let j = 0; j < dimensions.BLOCK_HEIGHT; j ++) {
             let X = x * dimensions.BLOCK_WIDTH + col;
             let Y = y * dimensions.BLOCK_HEIGHT + j;
-            tiles[j] = new Cell(X, Y, perlin.multiChannelPerlin2d(X / 30, Y / 30, 3, 2, [1, 1 / 6]));
+            // tiles[j] = new Cell(X, Y, perlin.multiChannelPerlin2d(X / 30, Y / 30, 3, 2, [1, 1 / 6]));
+            tiles[j] = this.getCell(X, Y);
         }
         return tiles;
     }
@@ -95,16 +127,16 @@ export class MapGenerator {
              X = this.spiralCenter.x + offX;
              Y = this.spiralCenter.y + offY;
              blockName = X + "," + Y;
-        } while (this.spiralStep < 50 && this.loadedBlocks[blockName] !== undefined && this.loadedBlocks[blockName].loaded >= dimensions.BLOCK_WIDTH);
-        if (this.spiralStep >= 50) return;
+        } while (this.spiralStep < 400 && this.loadedBlocks[blockName] !== undefined && this.loadedBlocks[blockName].loaded >= dimensions.BLOCK_WIDTH);
+        if (this.spiralStep >= 400) return;
         if (this.loadedBlocks[blockName] === undefined) this.loadedBlocks[blockName] = new Block(X, Y);
         let block = this.loadedBlocks[blockName];
         block.tiles[block.loaded] = this.getBlockColumn(X, Y, block.loaded);
         block.loaded ++;
         if (block.loaded >= dimensions.BLOCK_WIDTH) {
+            console.log("loaded block " + blockName);
             // renderlayers are going to be non-trivial to get, hold off on this
             // let dummy = block.renderLayer; // for caching so that we aren't drawing a bunch of renderlayers at once
-            console.log("loaded " + blockName);
         }
     }
 
@@ -139,6 +171,10 @@ export class Block {
         }
         return this.layers;
     }
+
+    public resolve() {
+        // 
+    }
 }
 
 // tslint:disable-next-line:max-classes-per-file
@@ -150,19 +186,21 @@ export class Cell {
     public feature: FeatureType = "none";
 
     constructor(public x: number, public y: number, public params: number[]) {
-        let [elevation, temperature] = this.params;
-        this.elevation = elevation;
-        this.temperature = temperature;
+        [this.elevation, this.temperature] = params;
         this.eval();
     }
 
     public eval() {
-        if (this.elevation < -0.4) {
+        if (this.elevation < -0.3) {
             this.type = "water";
-        } else if (this.elevation < -0.1) {
+        } else if (this.elevation < -0.20) {
             this.type = "sand";
         } else {
             this.type = "grass";
+        }
+
+        if (this.type === "water" && this.temperature > 0.5 && this.elevation > -this.temperature) {
+            this.type = "sand";
         }
 
         if (this.type === "water") {
@@ -173,11 +211,11 @@ export class Cell {
 
         let mt = new MersenneTwister(prand(this.x, this.y));
 
-        if (this.type === "grass" && mt.random() * 0.05 + 0.7 < this.temperature) {
+        if (this.type === "grass" && mt.random() * 0.05 + 0.5 < this.temperature) {
             this.type = "sand";
         }
 
-        if (mt.random() * 0.05 - 0.6 > this.temperature) {
+        if (mt.random() * 0.05 - 0.5 > this.temperature) {
             if (this.type === "grass" || this.type === "sand") {
                 this.type = "snow";
             }
@@ -187,8 +225,8 @@ export class Cell {
             }
         }
 
-        if (this.elevation > 0.1 &&
-                mt.random() * 4 < -Math.abs((this.temperature + 0.9) / 1.9 * 2 - 1) + 1) {
+        if (this.elevation > 0 &&
+                mt.random() * (14 - this.elevation * 12) < -Math.abs((this.temperature + 0.9) / 1.6 * 2 - 1) + 1) {
             this.passable = false;
             if (this.type === "sand") {
                 this.feature = "hotTree";

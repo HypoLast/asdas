@@ -28,7 +28,7 @@ export class Game {
 
         this.overworld = new Overworld();
         this.drawingLayer.addChild(this.overworld.renderLayer);
-        let mapId = 1;
+        let mapId = Date.now();
         this.overworld.loadMap(mapId);
     }
 

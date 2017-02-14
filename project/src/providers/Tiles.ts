@@ -26,7 +26,7 @@ function pool(map: number, ...tiles: [number, number][]) {
 
 export function prand(x: number, y: number) {
     // tslint:disable-next-line:no-bitwise
-    return Math.abs(Math.floor(Math.tan((x * 7817) % 6673) * 6337 % 7529 + Math.tan((y * 6337) % 7529) * 7817 % 6673)) % 1000;
+    return Math.abs(Math.floor(Math.tan((x * 7817) % 6673) * 6337 % 7529 + Math.tan((y * 6337) % 7529) * 7817 % 6673)) % 7000;
 }
 
 export function getTileTexture(batch: keyof typeof tiles, x: number = 0, y: number = 0) {
